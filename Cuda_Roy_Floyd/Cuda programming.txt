@@ -1,0 +1,64 @@
+#include<iostream>
+using namespace std;
+
+#define N 4
+#define INF 99999
+
+
+
+__global__ void RoyFloyd(int matrice[N][N])
+  {
+     int i = threadIdx.x;
+     int j = threadIdx.y;
+
+     if(matrice[proc_id][j] > matrice[proc_id][k] + matrice[k][j])
+	
+	matrice[proc_id][j] = matrice[proc_id][k] + matrice[k][j];
+  }
+
+
+
+int main()
+{
+   size_t size = N * N * sizeof(int);
+
+   int h_matrice[N][N] = {
+		0,3,99999,5,
+		5,0,1,99999,
+		3,99999,0,8,
+		99999,1,8,0,
+	};
+
+   int* d_matrice;
+   cudaMalloc(&d_matrice, size);
+
+   cudaMemcpy(d_matrice, h_matrice, size, cudaMemcpyHostToDevice);
+
+   dim3 threadsPerBlock(N, N);
+	int numBlocks = 1;
+
+	for(int k = 0; k < N; k++)
+	{
+	     RoyFloyd<<<numBlocks, threadsPerBlock>>>(d_matrice, k);
+	}
+
+    cudaMemcpy(h_matrice, d_matrice, size, cudaMemcpyDeviceToHost);
+    cudaFree(d_matrice);
+
+
+   for(int i = 0; i < N; i++)
+      {
+	 for(int j = 0; j < N; j++)
+	    {
+		if(h_matrice[i][j] == INF)
+		   cout << "INF";
+		else
+		   cout <<h_matrice[i][j] << " ";
+	    }
+	    cout << endl;
+      }
+
+}
+
+
+
